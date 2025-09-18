@@ -6,6 +6,8 @@ import {FuntimeConfig, FuntimeSecretProperty} from './index';
 describe('FuntimeConfig', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    FuntimeConfig.clear();
+    process.env.NODE_ENV = 'test';
     Object.keys(process.env).forEach(key => {
       if (key.startsWith('TEST_')) {
         delete process.env[key];
@@ -14,6 +16,45 @@ describe('FuntimeConfig', () => {
   });
 
   describe('load', () => {
+    it('should load the correct config class based on NODE_ENV', async () => {
+      class AppConfig extends FuntimeConfig {
+        @IsString()
+        TEST_ENV!: string;
+      }
+
+      class DevelopmentConfig extends AppConfig {
+        @IsString()
+        TEST_ENV = 'dev';
+      }
+
+      class ProductionConfig extends AppConfig {
+        @IsString()
+        TEST_ENV = 'prod';
+      }
+
+      FuntimeConfig.register(DevelopmentConfig, ProductionConfig);
+
+      process.env.NODE_ENV = 'development';
+      let result = await FuntimeConfig.load();
+      expect(result).toHaveProperty('TEST_ENV', 'dev');
+
+      process.env.NODE_ENV = 'production';
+      result = await FuntimeConfig.load();
+      expect(result).toHaveProperty('TEST_ENV', 'prod');
+    })
+
+    it('should load a specific config class when provided', async () => {
+      class TestConfig extends FuntimeConfig {
+        @IsString()
+        TEST_ENV = 'test';
+      }
+
+      FuntimeConfig.register(TestConfig);
+      const result = await FuntimeConfig.load(TestConfig);
+
+      expect(result).toHaveProperty('TEST_ENV', 'test');
+    })
+
     it('should load default values', async () => {
       class TestConfig extends FuntimeConfig {
         @IsString()
@@ -26,7 +67,7 @@ describe('FuntimeConfig', () => {
         TEST_BOOL = true;
 
         @IsObject()
-        COMPLEX_CONFIG = {
+        TEST_COMPLEX_CONFIG = {
           nested: {
             key: 'value'
           },
@@ -34,13 +75,13 @@ describe('FuntimeConfig', () => {
         }
       }
 
-      const config = new TestConfig();
-      const result = await config.load();
+      FuntimeConfig.register(TestConfig)
+      const result = await FuntimeConfig.load()
 
       expect(result).toHaveProperty('TEST_STRING', 'Default App');
       expect(result).toHaveProperty('TEST_NUMBER', 3000);
       expect(result).toHaveProperty('TEST_BOOL', true);
-      expect(result).toHaveProperty('COMPLEX_CONFIG', {
+      expect(result).toHaveProperty('TEST_COMPLEX_CONFIG', {
         nested: { key: 'value' },
         list: [1, 2, 3]
       });
@@ -61,31 +102,31 @@ describe('FuntimeConfig', () => {
         TEST_BOOL_2 = false;
 
         @IsObject()
-        COMPLEX_CONFIG = {};
+        TEST_COMPLEX_CONFIG = {};
 
         @IsString()
-        SECRET_VALUE = FuntimeSecretProperty;
+        TEST_SECRET_VALUE = FuntimeSecretProperty;
       }
 
       process.env.TEST_APP_NAME = 'My Test App';
       process.env.TEST_PORT = '8080';
       process.env.TEST_BOOL_1 = 'true';
       process.env.TEST_BOOL_2 = 'TRue';
-      process.env.SECRET_VALUE = 'supersecret';
-      process.env.COMPLEX_CONFIG = JSON.stringify({
+      process.env.TEST_SECRET_VALUE = 'supersecret';
+      process.env.TEST_COMPLEX_CONFIG = JSON.stringify({
         nested: { key: 'value' },
         list: [1, 2, 3]
       });
 
-      const config = new TestConfig();
-      const result = await config.load();
+      FuntimeConfig.register(TestConfig)
+      const result = await FuntimeConfig.load()
 
       expect(result).toHaveProperty('TEST_APP_NAME', 'My Test App');
       expect(result).toHaveProperty('TEST_PORT', 8080);
       expect(result).toHaveProperty('TEST_BOOL_1', true);
       expect(result).toHaveProperty('TEST_BOOL_2', true);
-      expect(result).toHaveProperty('SECRET_VALUE', 'supersecret');
-      expect(result).toHaveProperty('COMPLEX_CONFIG', {
+      expect(result).toHaveProperty('TEST_SECRET_VALUE', 'supersecret');
+      expect(result).toHaveProperty('TEST_COMPLEX_CONFIG', {
         nested: { key: 'value' },
         list: [1, 2, 3]
       });
@@ -97,8 +138,8 @@ describe('FuntimeConfig', () => {
         TEST_APP_NAME = () => 'RESOLVED_VALUE';
       }
 
-      const config = new TestConfig();
-      const result = await config.load();
+      FuntimeConfig.register(TestConfig)
+      const result = await FuntimeConfig.load()
 
       expect(result).toHaveProperty('TEST_APP_NAME', 'RESOLVED_VALUE');
     });
@@ -122,8 +163,8 @@ describe('FuntimeConfig', () => {
 
       process.env.TEST_BOOL = 'TRUE';
 
-      const config = new TestConfig();
-      const result = await config.load();
+      FuntimeConfig.register(TestConfig)
+      const result = await FuntimeConfig.load()
 
       expect(result).toHaveProperty('TEST_STR', 'test');
       expect(result).toHaveProperty('TEST_NUM', 69);

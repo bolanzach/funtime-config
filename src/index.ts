@@ -3,6 +3,8 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
 
 export type FuntimeProperty = () => Promise<any> | any;
 
+export type FuntimeConfigConstructor = new () => FuntimeConfig;
+
 /**
  * Symbol to mark properties that should be treated as secrets. Secrets should be injected via
  * environment variables and not hardcoded or checked into version control.
@@ -10,8 +12,20 @@ export type FuntimeProperty = () => Promise<any> | any;
 export const FuntimeSecretProperty = Symbol('FuntimeSecretProperty');
 
 export class FuntimeConfig {
+  private static configs: Map<string, FuntimeConfigConstructor> = new Map();
 
-  private parseEnvValue(value: string): any {
+  static register<T extends FuntimeConfig>(...config: Array<new () => T>) {
+    for (const cfg of config) {
+      const env = cfg.name.replace(/Config$/, '').toLowerCase();
+      FuntimeConfig.configs.set(env, cfg);
+    }
+  }
+
+  static clear() {
+    FuntimeConfig.configs.clear();
+  }
+
+  private static parseEnvValue(value: string): any {
     // Try to parse booleans
     if (value.toLowerCase() === 'true') return true;
     if (value.toLowerCase() === 'false') return false;
@@ -31,8 +45,22 @@ export class FuntimeConfig {
     return value;
   }
 
-  async load() {
-    const configObj: Record<string, any> = this;
+  static async load(config?: FuntimeConfigConstructor): Promise<FuntimeConfig> {
+    const nodeEnv = process.env.NODE_ENV;
+
+    if (!config && !nodeEnv) {
+      throw new Error('NODE_ENV environment variable is not set');
+    }
+
+    // Get config class based on NODE_ENV
+    const ConfigClass = config ?? FuntimeConfig.configs.get(nodeEnv as string);
+    if (!ConfigClass) {
+      throw new Error(`No configuration registered for NODE_ENV="${nodeEnv}"`);
+    }
+
+    // Create instance of the appropriate config class
+    const configInstance = new (ConfigClass as any)();
+    const configObj: Record<string, any> = configInstance;
 
     // Parse environment variables with type coercion
     for (const [key, value] of Object.entries(process.env)) {
@@ -41,7 +69,7 @@ export class FuntimeConfig {
       }
     }
 
-    const instance = plainToInstance(this.constructor as ClassConstructor<object>, configObj);
+    const instance = plainToInstance(ConfigClass as ClassConstructor<object>, configObj);
 
     // Resolve function properties
     for (const entry of Object.entries(instance)) {

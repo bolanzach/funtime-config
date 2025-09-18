@@ -50,11 +50,22 @@ class ProdConfig extends AppConfig {
 }
 ````
 
-Now, you can load the configuration based on the current environment.
+Now you register each available Configuration.
+The `load()` method will automatically detect the current environment via `NODE_ENV`.
 
 ```typescript
-const config = new DevConfig();
-await config.load();
+FuntimeConfig.register(DevConfig, ProdConfig, TestConfig);
+const appConfig = await FuntimeConfig.load();
+
+// process.env.NODE_ENV === 'dev' loads ProdConfig
+// process.env.NODE_ENV === 'prod' loads ProdConfig
+// process.env.NODE_ENV === 'test' loads TestConfig
+````
+
+You can also explicitly specify the environment to load.
+
+```typescript
+const appConfig = await FuntimeConfig.load(ProdConfig);
 ````
 
 ## Secret Management
@@ -91,7 +102,8 @@ class AppConfig extends FuntimeConfig {
   @IsString()
   API_KEY = async () => {
     // you can be a sicko and fetch from a .env file
-    loadEnv('.env');
+    const env = await loadEnvFile('.env');
+    return env.API_KEY;
   };
 }
 ````
