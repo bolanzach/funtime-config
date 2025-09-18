@@ -1,5 +1,7 @@
 import { validateSync } from 'class-validator';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
+import fs from 'fs';
+import path from 'path';
 
 // Re-export commonly used validators for convenience
 export {
@@ -37,13 +39,11 @@ type ConfigValue =
   | { [key: string]: ConfigValue }
   | ConfigValue[];
 
-export type FuntimeConfigConstructor = ClassConstructor<FuntimeConfig>;
-
-export type FuntimeConfigLoaderOptions = {
+export type FuntimeConfigLoaderOptions<T extends FuntimeConfig> = {
   /**
    * Environment-specific configuration classes to register.
    */
-  configs: Array<FuntimeConfigConstructor>;
+  configs: Array<ClassConstructor<T>>;
 
   /**
    * Path to a local configuration file used for development.
@@ -52,8 +52,10 @@ export type FuntimeConfigLoaderOptions = {
 
   /**
    * Optional path to a .env file to load environment variables from.
+   * By default, looks for a `.env` file in the current working directory. This can be disabled
+   * by setting to `false`.
    */
-  envFilePath?: string;
+  envFilePath?: string | boolean;
 }
 
 /**
@@ -67,13 +69,13 @@ export class FuntimeConfig {
 }
 
 export class FuntimeConfigLoader<T extends FuntimeConfig> {
-  private configs: Map<string, FuntimeConfigConstructor> = new Map();
+  private configs: Map<string, ClassConstructor<T>> = new Map();
 
-  constructor(private options: FuntimeConfigLoaderOptions) {
+  constructor(private options: FuntimeConfigLoaderOptions<T>) {
     this.register(...options.configs)
   }
 
-  register(...config: Array<FuntimeConfigConstructor>) {
+  register(...config: Array<ClassConstructor<T>>) {
     for (const cfg of config) {
       const env = cfg.name
         .toLowerCase()
@@ -82,7 +84,13 @@ export class FuntimeConfigLoader<T extends FuntimeConfig> {
     }
   }
 
-  async load(config?: FuntimeConfigConstructor): Promise<T> {
+  async load(config?: ClassConstructor<T>): Promise<T> {
+    // Load env file if specified
+    if (this.options.envFilePath) {
+      const filePath = this.options.envFilePath === true ? '.env' : this.options.envFilePath;
+      this.loadEnvFile(filePath);
+    }
+
     const nodeEnv = process.env.NODE_ENV;
 
     if (!config && !nodeEnv) {
@@ -111,6 +119,7 @@ export class FuntimeConfigLoader<T extends FuntimeConfig> {
     // Parse environment variables with type coercion
     for (const [key, value] of Object.entries(process.env)) {
       if (value !== undefined) {
+        // @ts-ignore
         configInstance[key] = this.parseEnvValue(value);
       }
     }
@@ -131,6 +140,40 @@ export class FuntimeConfigLoader<T extends FuntimeConfig> {
       throw new Error(`Validation failed: ${errors.map(e => Object.values(e.constraints || {}).join(', ')).join('; ')}`);
     }
     return instance;
+  }
+
+  private loadEnvFile(envFilePath: string): void {
+    try {
+      const resolvedPath = path.resolve(envFilePath);
+      if (!fs.existsSync(resolvedPath)) {
+        return;
+      }
+
+      const envContent = fs.readFileSync(resolvedPath, 'utf-8');
+      const lines = envContent.split('\n');
+
+      for (const line of lines) {
+        // Skip empty lines and comments
+        if (!line || line.trim().startsWith('#')) {
+          continue;
+        }
+
+        // Parse KEY=VALUE format
+        const [key, ...valueParts] = line.split('=');
+        if (key && valueParts.length > 0) {
+          const value = valueParts.join('=').trim();
+
+          // Remove surrounding quotes if present
+          const unquotedValue = value
+            .replace(/^["']/, '')
+            .replace(/["']$/, '');
+
+          process.env[key.trim()] = unquotedValue;
+        }
+      }
+    } catch (error) {
+      console.error(`Error loading environment file: ${error}`);
+    }
   }
 
   private parseEnvValue(value: string): any {

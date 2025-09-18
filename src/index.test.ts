@@ -69,6 +69,22 @@ describe('FuntimeConfig', () => {
       expect(result).toHaveProperty('TEST_ENV', 'test');
     })
 
+    it('should load a env file if specified', async () => {
+      class TestConfig extends FuntimeConfig {
+        @IsString()
+        TEST_ENV_FILE!: string;
+      }
+
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig],
+        envFilePath: './test/test.env'
+      });
+
+      const result = await configLoader.load();
+
+      expect(result).toHaveProperty('TEST_ENV_FILE', 'test.env_file.loaded_from_test_env');
+    })
+
     it('should load default values', async () => {
       class TestConfig extends FuntimeConfig {
         @IsString()

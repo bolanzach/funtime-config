@@ -81,6 +81,7 @@ You have a few options.
 ### (Preferred) Inject via environment variables
 
 Your Funtime-Config will automatically read from environment variables that match the property names.
+Some other processes (e.g., Docker, Kubernetes, CI/CD pipelines) can inject these environment variables at runtime.
 
 ```typescript
 class AppConfig extends FuntimeConfig {
@@ -110,6 +111,54 @@ class AppConfig extends FuntimeConfig {
   };
 }
 ````
+
+## ENV File Support
+
+You can load environment variables from a file (e.g., `.env`) with the loader.
+
+```typescript
+const configLoader = new FuntimeConfigLoader({
+  configs: [],
+  envFilePath: './path/to/.env',
+});
+```
+
+This allows you to continue to use define env variables in separate files while still leveraging Funtime-Config for validation.
+
+```
+# .test.env
+API_URL=http://test.api.myapp.com
+API_KEY=test
+
+# .prod.env
+API_URL=https://api.myapp.com
+API_KEY=
+
+# .env
+API_URL=http://localhost:3000
+API_KEY=localdevkey123
+```
+
+Then in your config:
+
+```typescript
+class AppConfig extends FuntimeConfig {
+  @IsString()
+  API_URL!: string;
+  
+  @IsString()
+  API_KEY = FuntimeSecretProperty;
+}
+
+const configLoader = new FuntimeConfigLoader<AppConfig>({
+  configs: [],
+  envFilePath: process.env.NODE_ENV === 'local' ? true : `./.${process.env.NODE_ENV}.env`,
+});
+const appConfig = await configLoader.load();
+```
+
+By default, if `envFilePath` is set to `true`, it will look for a `.env` file in the current working directory.
+
 
 ## Local Development
 
