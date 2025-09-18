@@ -1,12 +1,10 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {IsString, IsNumber, IsBoolean, IsObject} from 'class-validator';
-import {FuntimeConfig, FuntimeSecretProperty} from './index';
+import {FuntimeConfig, FuntimeConfigLoader, FuntimeSecretProperty, IsString, IsNumber, IsBoolean, IsObject} from './index';
 
 describe('FuntimeConfig', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    FuntimeConfig.clear();
     process.env.NODE_ENV = 'test';
     Object.keys(process.env).forEach(key => {
       if (key.startsWith('TEST_')) {
@@ -32,15 +30,29 @@ describe('FuntimeConfig', () => {
         TEST_ENV = 'prod';
       }
 
-      FuntimeConfig.register(DevelopmentConfig, ProductionConfig);
+      const configLoader = new FuntimeConfigLoader({
+        configs: [DevelopmentConfig, ProductionConfig],
+      })
 
       process.env.NODE_ENV = 'development';
-      let result = await FuntimeConfig.load();
+      let result = await configLoader.load();
       expect(result).toHaveProperty('TEST_ENV', 'dev');
 
       process.env.NODE_ENV = 'production';
-      result = await FuntimeConfig.load();
+      result = await configLoader.load();
       expect(result).toHaveProperty('TEST_ENV', 'prod');
+    })
+
+    it('should load the local config when NODE_ENV is local', async () => {
+      const configLoader = new FuntimeConfigLoader({
+        configs: [],
+        localConfigPath: './test/local.config'
+      });
+
+      process.env.NODE_ENV = 'local';
+
+      const result = await configLoader.load();
+      expect(result).toHaveProperty('TEST_STRING', 'local_string');
     })
 
     it('should load a specific config class when provided', async () => {
@@ -49,8 +61,10 @@ describe('FuntimeConfig', () => {
         TEST_ENV = 'test';
       }
 
-      FuntimeConfig.register(TestConfig);
-      const result = await FuntimeConfig.load(TestConfig);
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      });
+      const result = await configLoader.load(TestConfig);
 
       expect(result).toHaveProperty('TEST_ENV', 'test');
     })
@@ -75,8 +89,10 @@ describe('FuntimeConfig', () => {
         }
       }
 
-      FuntimeConfig.register(TestConfig)
-      const result = await FuntimeConfig.load()
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      })
+      const result = await configLoader.load()
 
       expect(result).toHaveProperty('TEST_STRING', 'Default App');
       expect(result).toHaveProperty('TEST_NUMBER', 3000);
@@ -118,8 +134,10 @@ describe('FuntimeConfig', () => {
         list: [1, 2, 3]
       });
 
-      FuntimeConfig.register(TestConfig)
-      const result = await FuntimeConfig.load()
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      })
+      const result = await configLoader.load()
 
       expect(result).toHaveProperty('TEST_APP_NAME', 'My Test App');
       expect(result).toHaveProperty('TEST_PORT', 8080);
@@ -138,8 +156,10 @@ describe('FuntimeConfig', () => {
         TEST_APP_NAME = () => 'RESOLVED_VALUE';
       }
 
-      FuntimeConfig.register(TestConfig)
-      const result = await FuntimeConfig.load()
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      });
+      const result = await configLoader.load()
 
       expect(result).toHaveProperty('TEST_APP_NAME', 'RESOLVED_VALUE');
     });
@@ -163,8 +183,10 @@ describe('FuntimeConfig', () => {
 
       process.env.TEST_BOOL = 'TRUE';
 
-      FuntimeConfig.register(TestConfig)
-      const result = await FuntimeConfig.load()
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      });
+      const result = await configLoader.load()
 
       expect(result).toHaveProperty('TEST_STR', 'test');
       expect(result).toHaveProperty('TEST_NUM', 69);

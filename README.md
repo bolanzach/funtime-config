@@ -15,7 +15,7 @@ Your class should extend `FuntimeConfig`.
 This serves as both the interface and the default configuration for your application.
 
 ```typescript
-import {FuntimeConfig} from "./index";
+import { FuntimeConfig, IsString, IsBoolean } from "funtime-config";
 
 class AppConfig extends FuntimeConfig {
   @IsString()
@@ -50,14 +50,16 @@ class ProdConfig extends AppConfig {
 }
 ````
 
-Now you register each available Configuration.
+Now you instantiate a loader, passing to it the env configs.
 The `load()` method will automatically detect the current environment via `NODE_ENV`.
 
 ```typescript
-FuntimeConfig.register(DevConfig, ProdConfig, TestConfig);
-const appConfig = await FuntimeConfig.load();
+const configLoader = new FuntimeConfigLoader({
+  configs: [DevConfig, ProdConfig, TestConfig],
+});
+const appConfig = await configLoader.load();
 
-// process.env.NODE_ENV === 'dev' loads ProdConfig
+// process.env.NODE_ENV === 'dev' loads DevConfig
 // process.env.NODE_ENV === 'prod' loads ProdConfig
 // process.env.NODE_ENV === 'test' loads TestConfig
 ````
@@ -65,7 +67,8 @@ const appConfig = await FuntimeConfig.load();
 You can also explicitly specify the environment to load.
 
 ```typescript
-const appConfig = await FuntimeConfig.load(ProdConfig);
+const configLoader = new FuntimeConfigLoader({ configs: [] });
+const appConfig = await configLoader.load(ProdConfig);
 ````
 
 ## Secret Management
@@ -108,9 +111,26 @@ class AppConfig extends FuntimeConfig {
 }
 ````
 
+## Local Development
 
-## Development
+When developing locally, you can create a `LocalConfig` class that won't be committed to source control (via gitignore).
+Specify the local config in the loader.
 
-```shell
-npm install
+```typescript
+// local.config.ts (add this file to .gitignore)
+export class LocalConfig extends FuntimeConfig {
+  @IsString()
+  API_URL = 'http://localhost:3000';
+}
 ```
+
+Then load it like so:
+
+```typescript
+const configLoader = new FuntimeConfigLoader({
+  configs: [...],
+  localConfigPath: './local.config',
+});
+````
+
+If the `NODE_ENV` is set to `local`, the loader will attempt to load the local config.
