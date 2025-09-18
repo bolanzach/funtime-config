@@ -94,13 +94,40 @@ describe('FuntimeConfig', () => {
     it('should resolve function properties', async () => {
       class TestConfig extends FuntimeConfig {
         @IsString()
-        TEST_APP_NAME = ({ property }: { property: string }) => `RESOLVED_${property}`;
+        TEST_APP_NAME = () => 'RESOLVED_VALUE';
       }
 
       const config = new TestConfig();
       const result = await config.load();
 
-      expect(result).toHaveProperty('TEST_APP_NAME', 'RESOLVED_TEST_APP_NAME');
+      expect(result).toHaveProperty('TEST_APP_NAME', 'RESOLVED_VALUE');
     });
+
+    it('should work with inherited properties', async () => {
+      class BaseConfig extends FuntimeConfig {
+        @IsString()
+        TEST_STR!: string;
+
+        @IsNumber()
+        TEST_NUM = 42;
+
+        @IsBoolean()
+        TEST_BOOL!: boolean;
+      }
+
+      class TestConfig extends BaseConfig {
+        TEST_STR = 'test';
+        TEST_NUM = 69
+      }
+
+      process.env.TEST_BOOL = 'TRUE';
+
+      const config = new TestConfig();
+      const result = await config.load();
+
+      expect(result).toHaveProperty('TEST_STR', 'test');
+      expect(result).toHaveProperty('TEST_NUM', 69);
+      expect(result).toHaveProperty('TEST_BOOL', true);
+    })
   });
 });

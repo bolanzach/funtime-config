@@ -1,11 +1,7 @@
 import { validateSync } from 'class-validator';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 
-export type FuntimePropertyInput = {
-  property: string
-}
-
-export type FuntimeProperty = (input: FuntimePropertyInput) => Promise<any> | any;
+export type FuntimeProperty = () => Promise<any> | any;
 
 /**
  * Symbol to mark properties that should be treated as secrets. Secrets should be injected via
