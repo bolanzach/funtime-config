@@ -30,7 +30,7 @@ describe('FuntimeConfig', () => {
         TEST_ENV = 'prod';
       }
 
-      const configLoader = new FuntimeConfigLoader({
+      const configLoader = new FuntimeConfigLoader<AppConfig>({
         configs: [DevelopmentConfig, ProductionConfig],
       })
 
@@ -152,9 +152,27 @@ describe('FuntimeConfig', () => {
 
     it('should resolve function properties', async () => {
       class TestConfig extends FuntimeConfig {
+        @IsNumber()
+        TEST_NUMBER = 42;
+
+        @IsString()
+        TEST_SECRET = FuntimeSecretProperty;
+
         @IsString()
         TEST_APP_NAME = () => 'RESOLVED_VALUE';
+
+        @IsObject()
+        TEST_RESOLVED_OBJ = () => {
+          return {
+            fromNumber: this.TEST_NUMBER,
+          }
+        }
+
+        @IsString()
+        TEST_RESOLVED_SECRET = () => this.TEST_SECRET
       }
+
+      process.env.TEST_SECRET = 'mysecret';
 
       const configLoader = new FuntimeConfigLoader({
         configs: [TestConfig]
@@ -162,6 +180,8 @@ describe('FuntimeConfig', () => {
       const result = await configLoader.load()
 
       expect(result).toHaveProperty('TEST_APP_NAME', 'RESOLVED_VALUE');
+      expect(result).toHaveProperty('TEST_RESOLVED_OBJ', { fromNumber: 42 });
+      expect(result).toHaveProperty('TEST_RESOLVED_SECRET', 'mysecret');
     });
 
     it('should work with inherited properties', async () => {
@@ -174,6 +194,9 @@ describe('FuntimeConfig', () => {
 
         @IsBoolean()
         TEST_BOOL!: boolean;
+
+        @IsObject()
+        TEST_OBJ = { key: 'value_from_obj' };
       }
 
       class TestConfig extends BaseConfig {
@@ -191,6 +214,7 @@ describe('FuntimeConfig', () => {
       expect(result).toHaveProperty('TEST_STR', 'test');
       expect(result).toHaveProperty('TEST_NUM', 69);
       expect(result).toHaveProperty('TEST_BOOL', true);
+      expect(result).toHaveProperty('TEST_OBJ', { key: 'value_from_obj' });
     })
   });
 });

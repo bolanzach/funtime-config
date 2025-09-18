@@ -54,7 +54,7 @@ Now you instantiate a loader, passing to it the env configs.
 The `load()` method will automatically detect the current environment via `NODE_ENV`.
 
 ```typescript
-const configLoader = new FuntimeConfigLoader({
+const configLoader = new FuntimeConfigLoader<AppConfig>({
   configs: [DevConfig, ProdConfig, TestConfig],
 });
 const appConfig = await configLoader.load();

@@ -66,8 +66,8 @@ export class FuntimeConfig {
   [key: string]: ConfigValue;
 }
 
-export class FuntimeConfigLoader {
-  private configs: Map<string, FuntimeConfigConstructor | string> = new Map();
+export class FuntimeConfigLoader<T extends FuntimeConfig> {
+  private configs: Map<string, FuntimeConfigConstructor> = new Map();
 
   constructor(private options: FuntimeConfigLoaderOptions) {
     this.register(...options.configs)
@@ -82,7 +82,7 @@ export class FuntimeConfigLoader {
     }
   }
 
-  async load(config?: FuntimeConfigConstructor): Promise<FuntimeConfig> {
+  async load(config?: FuntimeConfigConstructor): Promise<T> {
     const nodeEnv = process.env.NODE_ENV;
 
     if (!config && !nodeEnv) {
@@ -106,17 +106,16 @@ export class FuntimeConfigLoader {
     }
 
     // Create instance of the appropriate config class
-    const configInstance = new (ConfigClass as any)();
-    const configObj: Record<string, any> = configInstance;
+    const configInstance = new ConfigClass();
 
     // Parse environment variables with type coercion
     for (const [key, value] of Object.entries(process.env)) {
       if (value !== undefined) {
-        configObj[key] = this.parseEnvValue(value);
+        configInstance[key] = this.parseEnvValue(value);
       }
     }
 
-    const instance = plainToInstance(ConfigClass as FuntimeConfigConstructor, configObj);
+    const instance = plainToInstance(ConfigClass, configInstance) as T;
 
     // Resolve function properties
     for (const entry of Object.entries(instance)) {
