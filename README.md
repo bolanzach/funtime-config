@@ -114,7 +114,7 @@ class AppConfig extends FuntimeConfig {
 
 ## ENV File Support
 
-You can load environment variables from a file (e.g., `.env`) with the loader.
+You can load environment variables from a `.env` file with the loader.
 
 ```typescript
 const configLoader = new FuntimeConfigLoader({
@@ -123,7 +123,7 @@ const configLoader = new FuntimeConfigLoader({
 });
 ```
 
-This allows you to continue to use define env variables in separate files while still leveraging Funtime-Config for validation.
+This allows you to continue to use env variables in separate files while still leveraging Funtime-Config for validation.
 
 ```
 # .test.env
@@ -151,13 +151,14 @@ class AppConfig extends FuntimeConfig {
 }
 
 const configLoader = new FuntimeConfigLoader<AppConfig>({
-  configs: [],
+  configs: [AppConfig],
   envFilePath: process.env.NODE_ENV === 'local' ? true : `./.${process.env.NODE_ENV}.env`,
 });
 const appConfig = await configLoader.load();
 ```
 
 By default, if `envFilePath` is set to `true`, it will look for a `.env` file in the current working directory.
+This can be disabled by setting `envFilePath` to `false`.
 
 
 ## Local Development

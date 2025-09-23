@@ -1,4 +1,4 @@
-import { validateSync } from 'class-validator';
+import { validateSync, IsString } from 'class-validator';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import fs from 'fs';
 import path from 'path';
@@ -66,6 +66,9 @@ export const FuntimeSecretProperty = Symbol('FuntimeSecretProperty');
 
 export class FuntimeConfig {
   [key: string]: ConfigValue;
+
+  @IsString()
+  NODE_ENV!: string;
 }
 
 export class FuntimeConfigLoader<T extends FuntimeConfig> {
