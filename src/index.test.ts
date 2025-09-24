@@ -1,6 +1,15 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {FuntimeConfig, FuntimeConfigLoader, FuntimeSecretProperty, IsString, IsNumber, IsBoolean, IsObject} from './index';
+import {
+  FuntimeConfig,
+  FuntimeConfigLoader,
+  FuntimeSecretProperty,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsObject,
+  getConfig
+} from './index';
 
 describe('FuntimeConfig', () => {
   beforeEach(() => {
@@ -231,6 +240,22 @@ describe('FuntimeConfig', () => {
       expect(result).toHaveProperty('TEST_NUM', 69);
       expect(result).toHaveProperty('TEST_BOOL', true);
       expect(result).toHaveProperty('TEST_OBJ', { key: 'value_from_obj' });
+    })
+
+    it('should have a global config', async () => {
+      class TestConfig extends FuntimeConfig {
+        @IsString()
+        TEST_PROP = 'prop_value';
+      }
+
+      const configLoader = new FuntimeConfigLoader({
+        configs: [TestConfig]
+      });
+      await configLoader.load();
+
+      const config = getConfig<TestConfig>();
+
+      expect(config).toHaveProperty('TEST_PROP', 'prop_value');
     })
   });
 });

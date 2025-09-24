@@ -2,6 +2,7 @@
   "name": "funtime-config",
   "version": "0.1.0",
   "description": "A modern TypeScript configuration library for Node.js and Deno",
+  "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",

@@ -71,6 +71,32 @@ const configLoader = new FuntimeConfigLoader({ configs: [] });
 const appConfig = await configLoader.load(ProdConfig);
 ````
 
+### Important
+
+Notice that loading the config is an async operation.
+This likely means that you will need to bootstrap your application with async module loading.
+
+```typescript
+// index.ts
+import { getConfig } from "./index";
+
+async function bootstrap() {
+  const configLoader = new FuntimeConfigLoader({configs: []});
+  const appConfig = await configLoader.load();
+
+  const {default: app} = await import('./app.ts');
+  app(appConfig);
+}
+
+// app.ts
+export default function app(config: AppConfig) {
+  // your app
+
+  // can accces a global config instance
+  getConfig<YourAppConfig>();
+}
+````
+
 ## Secret Management
 
 Secrets such as passwords and API keys should NEVER be hardcoded in your configuration files.

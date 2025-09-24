@@ -64,6 +64,15 @@ export type FuntimeConfigLoaderOptions<T extends FuntimeConfig> = {
  */
 export const FuntimeSecretProperty = Symbol('FuntimeSecretProperty');
 
+let _globalConfig: FuntimeConfig | undefined;
+
+export function getConfig<T extends FuntimeConfig>(): T {
+  if (!_globalConfig) {
+    throw new Error('Config not initialized. Please load a config first.');
+  }
+  return _globalConfig as T;
+}
+
 export class FuntimeConfig {
   [key: string]: ConfigValue;
 
@@ -142,6 +151,9 @@ export class FuntimeConfigLoader<T extends FuntimeConfig> {
     if (errors.length > 0) {
       throw new Error(`Validation failed: ${errors.map(e => Object.values(e.constraints || {}).join(', ')).join('; ')}`);
     }
+
+    _globalConfig = instance;
+
     return instance;
   }
 
