@@ -58,11 +58,21 @@ export type FuntimeConfigLoaderOptions<T extends FuntimeConfig> = {
   envFilePath?: string | boolean;
 }
 
+const FuntimeSecretSymbolTag = Symbol('FuntimeSecretSymbolTag');
+
 /**
- * Symbol to mark properties that should be treated as secrets. Secrets should be injected via
+ * Marks a property that should be treated as a secret. Secrets should be injected via
  * environment variables and not hardcoded or checked into version control.
+ *
+ * @example
+ * ```ts
+ * {
+ *    @IsString()
+ *    myProperty: FuntimeSecretProperty<string>()
+ * }
+ * ```
  */
-export const FuntimeSecretProperty = Symbol('FuntimeSecretProperty');
+export const FuntimeSecretProperty = <T>() => FuntimeSecretSymbolTag as T;
 
 let _globalConfig: FuntimeConfig | undefined;
 

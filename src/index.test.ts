@@ -8,7 +8,7 @@ import {
   IsNumber,
   IsBoolean,
   IsObject,
-  getConfig
+  getConfig,
 } from './index';
 
 describe('FuntimeConfig', () => {
@@ -146,7 +146,7 @@ describe('FuntimeConfig', () => {
         TEST_COMPLEX_CONFIG = {};
 
         @IsString()
-        TEST_SECRET_VALUE = FuntimeSecretProperty;
+        TEST_SECRET_VALUE = FuntimeSecretProperty<string>();
       }
 
       process.env.TEST_APP_NAME = 'My Test App';
@@ -181,7 +181,7 @@ describe('FuntimeConfig', () => {
         TEST_NUMBER = 42;
 
         @IsString()
-        TEST_SECRET = FuntimeSecretProperty;
+        TEST_SECRET = FuntimeSecretProperty<string>();
 
         @IsString()
         TEST_APP_NAME = () => 'RESOLVED_VALUE';
