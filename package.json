@@ -2,25 +2,22 @@
   "name": "funtime-config",
   "version": "0.1.0",
   "description": "A modern TypeScript configuration library for Node.js and Deno",
-  "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "npm run build:cjs && npm run build:esm && npm run build:types",
-    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
-    "build:esm": "tsc --module esnext --outDir dist/esm",
-    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist/types",
+    "build": "tsdown src/index.ts --format cjs,esm --dts",
+    "dev": "tsdown src/index.ts --format cjs,esm --dts --watch",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -42,6 +39,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@vitest/coverage-v8": "^3.2.4",
+    "tsdown": "^0.15.4",
     "typescript": "^5.3.0",
     "vitest": "^3.2.4"
   },
