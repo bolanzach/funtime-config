@@ -112,7 +112,7 @@ Some other processes (e.g., Docker, Kubernetes, CI/CD pipelines) can inject thes
 ```typescript
 class AppConfig extends FuntimeConfig {
   @IsString()
-  DB_PASSWORD = FuntimeSecretProperty;
+  DB_PASSWORD = FuntimeSecretProperty<string>();
 }
 ```
 
@@ -158,7 +158,7 @@ API_KEY=test
 
 # .prod.env
 API_URL=https://api.myapp.com
-API_KEY=
+API_KEY=# THIS GETS INJECTED VIA A SECRET MANAGER
 
 # .env
 API_URL=http://localhost:3000
@@ -173,7 +173,7 @@ class AppConfig extends FuntimeConfig {
   API_URL!: string;
   
   @IsString()
-  API_KEY = FuntimeSecretProperty;
+  API_KEY = FuntimeSecretProperty<string>();
 }
 
 const configLoader = new FuntimeConfigLoader<AppConfig>({
