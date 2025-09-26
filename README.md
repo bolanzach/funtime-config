@@ -119,22 +119,28 @@ class AppConfig extends FuntimeConfig {
 ### (Alternate) Resolve async properties
 
 You can also define async properties that fetch values.
-This is not reserved for secrets and can be used for any property that requires async resolution.
+
+Notice that this is not reserved just for secrets and can be used for any property that requires async resolution.
 
 ```typescript
 class AppConfig extends FuntimeConfig {
   @IsString()
-  DB_PASSWORD = async () => {
+  DB_PASSWORD = FuntimeResolveProperty(async () => {
     // fetch from secret manager
     return await fetchDBSecret();
-  };
+  });
+  
+  @IsNumber()
+  PORT = 4242;  // default port
+}
 
-  @IsString()
-  API_KEY = async () => {
-    // you can be a sicko and fetch from a .env file
-    const env = await loadEnvFile('.env');
-    return env.API_KEY;
-  };
+class ProdConfig extends AppConfig {
+  PORT = FuntimeResolveProperty(async () => {
+    // Notice that FuntimeResolveProperty can override default values too.
+    
+    // fetch from a remote config service
+    return await fetchAvailablePort();
+  });
 }
 ````
 

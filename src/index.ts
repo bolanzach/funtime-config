@@ -61,18 +61,23 @@ export type FuntimeConfigLoaderOptions<T extends FuntimeConfig> = {
 const FuntimeSecretSymbolTag = Symbol('FuntimeSecretSymbolTag');
 
 /**
- * Marks a property that should be treated as a secret. Secrets should be injected via
+ * Wraps a function property to indicate that it should be resolved at runtime.
+ */
+export const FuntimeResolveProperty = <T extends () => any | Promise<any>>(fn: T): Awaited<ReturnType<T>> => fn as Awaited<ReturnType<T>>;
+
+/**
+ * Marks a property that should be treated as a secret. Secrets should be *injected* via
  * environment variables and not hardcoded or checked into version control.
  *
  * @example
  * ```ts
  * {
  *    @IsString()
- *    myProperty: FuntimeSecretProperty<string>()
+ *    myProperty: FuntimeInjectProperty<string>()
  * }
  * ```
  */
-export const FuntimeSecretProperty = <T>() => FuntimeSecretSymbolTag as T;
+export const FuntimeInjectProperty = <T>() => FuntimeSecretSymbolTag as T;
 
 let _globalConfig: FuntimeConfig | undefined;
 

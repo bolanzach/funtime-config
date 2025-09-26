@@ -3,12 +3,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   FuntimeConfig,
   FuntimeConfigLoader,
-  FuntimeSecretProperty,
+  FuntimeInjectProperty,
   IsString,
   IsNumber,
   IsBoolean,
   IsObject,
-  getConfig,
+  getConfig, FuntimeResolveProperty,
 } from './index';
 
 describe('FuntimeConfig', () => {
@@ -146,7 +146,7 @@ describe('FuntimeConfig', () => {
         TEST_COMPLEX_CONFIG = {};
 
         @IsString()
-        TEST_SECRET_VALUE = FuntimeSecretProperty<string>();
+        TEST_SECRET_VALUE = FuntimeInjectProperty<string>();
       }
 
       process.env.TEST_APP_NAME = 'My Test App';
@@ -181,20 +181,20 @@ describe('FuntimeConfig', () => {
         TEST_NUMBER = 42;
 
         @IsString()
-        TEST_SECRET = FuntimeSecretProperty<string>();
+        TEST_SECRET = FuntimeInjectProperty<string>();
 
         @IsString()
-        TEST_APP_NAME = () => 'RESOLVED_VALUE';
+        TEST_APP_NAME = FuntimeResolveProperty(async () => 'RESOLVED_VALUE');
 
         @IsObject()
-        TEST_RESOLVED_OBJ = () => {
+        TEST_RESOLVED_OBJ = FuntimeResolveProperty(() => {
           return {
             fromNumber: this.TEST_NUMBER,
           }
-        }
+        });
 
         @IsString()
-        TEST_RESOLVED_SECRET = () => this.TEST_SECRET
+        TEST_RESOLVED_SECRET = FuntimeResolveProperty(() => this.TEST_SECRET)
       }
 
       process.env.TEST_SECRET = 'mysecret';
@@ -222,11 +222,15 @@ describe('FuntimeConfig', () => {
 
         @IsObject()
         TEST_OBJ = { key: 'value_from_obj' };
+
+        @IsNumber()
+        TEST_RESOLVED = 100;
       }
 
       class TestConfig extends BaseConfig {
         TEST_STR = 'test';
         TEST_NUM = 69
+        TEST_RESOLVED = FuntimeResolveProperty(() => this.TEST_NUM * 2);
       }
 
       process.env.TEST_BOOL = 'TRUE';
@@ -240,6 +244,7 @@ describe('FuntimeConfig', () => {
       expect(result).toHaveProperty('TEST_NUM', 69);
       expect(result).toHaveProperty('TEST_BOOL', true);
       expect(result).toHaveProperty('TEST_OBJ', { key: 'value_from_obj' });
+      expect(result).toHaveProperty('TEST_RESOLVED', 138);
     })
 
     it('should have a global config', async () => {
