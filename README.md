@@ -1,6 +1,7 @@
 # Funtime-Config
 
-Funtime-Config is a configuration management tool designed to simplify the process of managing and deploying configurations across multiple environments.
+Funtime-Config (*Run*time-config but more Fun) is a configuration management tool designed to simplify the process of managing and deploying configurations across multiple environments.
+It follows the the principle of [Parse, don't Validate](https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/) where you create a configuration instance rather than just validate config data.
 
 ## Installation
 
@@ -31,6 +32,7 @@ class AppConfig extends FuntimeConfig {
 
 Notice that each property is decorated with a validation decorator.
 This is what enables runtime validation of your configuration.
+Internally this uses [class-validator](https://github.com/typestack/class-validator) for the decorators.
 
 Next, define your environment-specific configurations.
 
@@ -78,21 +80,20 @@ This likely means that you will need to bootstrap your application with async mo
 
 ```typescript
 // index.ts
-import { getConfig } from "./index";
+import { getConfig } from "funtime-config";
 
-async function bootstrap() {
-  const configLoader = new FuntimeConfigLoader({configs: []});
-  const appConfig = await configLoader.load();
-
+const configLoader = new FuntimeConfigLoader({configs: []});
+const appConfig = configLoader.load().then(async (config) => {
   const {default: app} = await import('./app.ts');
   app(appConfig);
-}
+});
+
 
 // app.ts
 export default function app(config: AppConfig) {
-  // your app
+  // your app logic here
 
-  // can accces a global config instance
+  // can accces the global config instance
   getConfig<YourAppConfig>();
 }
 ````

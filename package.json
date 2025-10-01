@@ -1,6 +1,6 @@
 {
   "name": "funtime-config",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A modern TypeScript configuration library for Node.js and Deno",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -31,7 +31,7 @@
     "nodejs",
     "deno"
   ],
-  "author": "",
+  "author": "<bolanzach@gmail.com>",
   "license": "MIT",
   "engines": {
     "node": ">=v20.19.5"
